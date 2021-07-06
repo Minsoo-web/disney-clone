@@ -1,43 +1,103 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { auth, provider } from "../firebase";
 import styled from "styled-components";
+import { useHistory } from "react-router-dom";
+import {
+  selectUserPhoto,
+  selectUserName,
+  setUserLogin,
+  setSignOut
+} from "../features/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
 
 function Header() {
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
+  const dispatch = useDispatch();
+  const history = useHistory();
+
+  useEffect(() => {
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        console.log("object");
+        dispatch(
+          setUserLogin({
+            name: user.displayName,
+            email: user.email,
+            photo: user.photoURL
+          })
+        );
+        history.push("/");
+      }
+    });
+  });
+
+  const signIn = () => {
+    auth.signInWithPopup(provider).then(result => {
+      let user = result.user;
+      dispatch(
+        setUserLogin({
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL
+        })
+      );
+      history.push("/");
+    });
+  };
+
+  const signOut = () => {
+    auth.signOut().then(() => {
+      dispatch(setSignOut());
+      history.push("/login");
+    });
+  };
+
   return (
     <Nav>
       <Logo src="/images/logo.svg" />
-      <NavMenu>
-        <a href="/">
-          <img src="/images/home-icon.svg" alt="home-icon"></img>
-          <span>HOME</span>
-        </a>
+      {!userName ? (
+        <LoginContainer>
+          <LoginButton onClick={signIn}>Login</LoginButton>
+        </LoginContainer>
+      ) : (
+        <>
+          <NavMenu>
+            <a href="/">
+              <img src="/images/home-icon.svg" alt="home-icon"></img>
+              <span>HOME</span>
+            </a>
 
-        <a href="/">
-          <img src="/images/search-icon.svg" alt="home-icon"></img>
-          <span>SEARCH</span>
-        </a>
+            <a href="/">
+              <img src="/images/search-icon.svg" alt="home-icon"></img>
+              <span>SEARCH</span>
+            </a>
 
-        <a href="/">
-          <img src="/images/watchlist-icon.svg" alt="home-icon"></img>
-          <span>WATCHLIST</span>
-        </a>
+            <a href="/">
+              <img src="/images/watchlist-icon.svg" alt="home-icon"></img>
+              <span>WATCHLIST</span>
+            </a>
 
-        <a href="/">
-          <img src="/images/original-icon.svg" alt="home-icon"></img>
-          <span>ORIGINALS</span>
-        </a>
+            <a href="/">
+              <img src="/images/original-icon.svg" alt="home-icon"></img>
+              <span>ORIGINALS</span>
+            </a>
 
-        <a href="/">
-          <img src="/images/movie-icon.svg" alt="home-icon"></img>
-          <span>MOVIE</span>
-        </a>
+            <a href="/">
+              <img src="/images/movie-icon.svg" alt="home-icon"></img>
+              <span>MOVIE</span>
+            </a>
 
-        <a href="/">
-          <img src="/images/series-icon.svg" alt="home-icon"></img>
-          <span>SERIES</span>
-        </a>
-      </NavMenu>
+            <a href="/">
+              <img src="/images/series-icon.svg" alt="home-icon"></img>
+              <span>SERIES</span>
+            </a>
+          </NavMenu>
 
-      <UserImg src="https://avatars.githubusercontent.com/u/57122180?v=4" />
+          <UserImg onClick={signOut} src={userPhoto} />
+        </>
+      )}
     </Nav>
   );
 }
@@ -107,4 +167,28 @@ const UserImg = styled.img`
   height: 48px;
   border-radius: 50%;
   cursor: pointer;
+`;
+
+const LoginContainer = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const LoginButton = styled.button`
+  padding: 8px 16px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 1px solid #f9f9f9;
+  border-radius: 4px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: all 0.2s ease 0s;
+  color: white;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f9f9f9;
+    color: #000;
+    border-color: transparent;
+  }
 `;
